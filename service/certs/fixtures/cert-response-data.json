@@ -1,0 +1,40 @@
+{
+    "consumers": [
+        {
+            "id": "0XXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+            "region": "ru-1",
+            "type": "octavia-listener"
+        },
+        {   "id": "1XXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+            "region": "kz-228",
+            "type": "zeliboba-enjoyer"
+        }
+    ],
+    "dns_names": [
+        "fishing.com"
+    ],
+    "id": "9ddc1899-2a08-4bdb-9a74-4f88371d3533",
+    "issued_by": {
+        "country": [
+            "RU"
+        ],
+        "locality": [
+            "string"
+        ],
+        "serialNumber": "string",
+        "streetAddress": [
+            "string"
+        ]
+    },
+    "name": "Zeliboba",
+    "private_key": {
+        "type": "RSA"
+    },
+    "serial": "2c4ba60c7a43107bd0d6c79907dc915fdb028285",
+    "validity": {
+        "basic_constraints": true,
+        "notAfter": "2034-01-06T08:37:43Z",
+        "notBefore": "2024-01-09T08:37:43Z"
+    },
+    "version": 228
+}
