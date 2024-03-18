@@ -12,6 +12,8 @@ import (
 	"github.com/selectel/secretsmanager-go/secretsmanagererrors"
 )
 
+const apiVersion = "v1"
+
 // Service implements Secrets Manager part that is responsible for handling secrets operations.
 type Service struct {
 	apiURLSecrets string
@@ -26,7 +28,15 @@ func New(url string, client *httpclient.HTTPClient) *Service {
 }
 
 func (s Service) List(ctx context.Context) (Secrets, error) {
-	endpoint, err := url.Parse(s.apiURLSecrets)
+	rawEndpoint, err := url.JoinPath(s.apiURLSecrets, apiVersion)
+	if err != nil {
+		return Secrets{}, secretsmanagererrors.Error{
+			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
+			Desc: err.Error(),
+		}
+	}
+
+	endpoint, err := url.Parse(rawEndpoint)
 	if err != nil {
 		return Secrets{}, secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -62,7 +72,7 @@ func (s Service) Delete(ctx context.Context, key string) error {
 		}
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLSecrets, key)
+	endpoint, err := url.JoinPath(s.apiURLSecrets, apiVersion, key)
 	if err != nil {
 		return secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrInternalAppError,
@@ -85,7 +95,7 @@ func (s Service) Get(ctx context.Context, key string) (Secret, error) {
 		}
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLSecrets, key)
+	endpoint, err := url.JoinPath(s.apiURLSecrets, apiVersion, key)
 	if err != nil {
 		return Secret{}, secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -118,7 +128,7 @@ func (s Service) Update(ctx context.Context, usc UserSecret) error {
 		}
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLSecrets, usc.Key)
+	endpoint, err := url.JoinPath(s.apiURLSecrets, apiVersion, usc.Key)
 	if err != nil {
 		return secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -160,7 +170,7 @@ func (s Service) Create(ctx context.Context, usc UserSecret) error {
 	}
 	usc.Value = base64.StdEncoding.EncodeToString([]byte(usc.Value))
 
-	endpoint, err := url.JoinPath(s.apiURLSecrets, usc.Key)
+	endpoint, err := url.JoinPath(s.apiURLSecrets, apiVersion, usc.Key)
 	if err != nil {
 		return secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,

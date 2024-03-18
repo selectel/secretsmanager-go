@@ -12,10 +12,10 @@ import (
 
 const (
 	// URL for working with secrets.
-	defaultAPIURLSecrets = "https://cloud.api.selcloud.ru/secrets-manager/v1/" //nolint:gosec
+	defaultAPIURLSecrets = "https://cloud.api.selcloud.ru/secrets-manager/" //nolint:gosec
 
 	// URL for working with certificates.
-	defaultAPIURLUserCertificates = "https://cloud.api.selcloud.ru/certificate-manager/v1/"
+	defaultAPIURLUserCertificates = "https://cloud.api.selcloud.ru/certificate-manager/"
 )
 
 // Client — implements operations to work with the Secrets Manager API using the Keystone Token.
