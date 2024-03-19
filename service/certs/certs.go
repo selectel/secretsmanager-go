@@ -11,6 +11,8 @@ import (
 	"github.com/selectel/secretsmanager-go/secretsmanagererrors"
 )
 
+const apiVersion = "v1"
+
 // Service implements Secrets Manager that is responsible for handling certificates operations.
 type Service struct {
 	apiURLUserCertificates string
@@ -32,7 +34,7 @@ func (s Service) Delete(ctx context.Context, id string) error {
 		}
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLUserCertificates, "cert", id)
+	endpoint, err := url.JoinPath(s.apiURLUserCertificates, apiVersion, "cert", id)
 	if err != nil {
 		return secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -56,7 +58,7 @@ func (s Service) Get(ctx context.Context, id string) (Certificate, error) {
 		}
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLUserCertificates, "cert", id)
+	endpoint, err := url.JoinPath(s.apiURLUserCertificates, apiVersion, "cert", id)
 	if err != nil {
 		return Certificate{}, secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -93,7 +95,7 @@ func (s Service) UpdateVersion(ctx context.Context, id string, pem UpdateCertifi
 		return err
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLUserCertificates, "cert", id)
+	endpoint, err := url.JoinPath(s.apiURLUserCertificates, apiVersion, "cert", id)
 	if err != nil {
 		return secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -133,7 +135,7 @@ func (s Service) UpdateName(ctx context.Context, id, name string) error {
 		}
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLUserCertificates, "cert", id)
+	endpoint, err := url.JoinPath(s.apiURLUserCertificates, apiVersion, "cert", id)
 	if err != nil {
 		return secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -171,7 +173,7 @@ func (s Service) GetPublicCerts(ctx context.Context, id string) (string, error) 
 		}
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLUserCertificates, "cert", id, "ca_chain")
+	endpoint, err := url.JoinPath(s.apiURLUserCertificates, apiVersion, "cert", id, "ca_chain")
 	if err != nil {
 		return "", secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -195,7 +197,7 @@ func (s Service) RemoveConsumers(ctx context.Context, id string, consumers Remov
 		}
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLUserCertificates, "cert", id, "consumers")
+	endpoint, err := url.JoinPath(s.apiURLUserCertificates, apiVersion, "cert", id, "consumers")
 	if err != nil {
 		return secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -229,7 +231,7 @@ func (s Service) AddConsumers(ctx context.Context, id string, consumers AddConsu
 		}
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLUserCertificates, "cert", id, "consumers")
+	endpoint, err := url.JoinPath(s.apiURLUserCertificates, apiVersion, "cert", id, "consumers")
 	if err != nil {
 		return secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -263,7 +265,7 @@ func (s Service) GetPKCS12Bundle(ctx context.Context, id string) ([]byte, error)
 		}
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLUserCertificates, "cert", id, "p12")
+	endpoint, err := url.JoinPath(s.apiURLUserCertificates, apiVersion, "cert", id, "p12")
 	if err != nil {
 		return []byte{}, secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -287,7 +289,7 @@ func (s Service) GetPrivateKey(ctx context.Context, id string) (string, error) {
 		}
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLUserCertificates, "cert", id, "private_key")
+	endpoint, err := url.JoinPath(s.apiURLUserCertificates, apiVersion, "cert", id, "private_key")
 	if err != nil {
 		return "", secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -304,7 +306,7 @@ func (s Service) GetPrivateKey(ctx context.Context, id string) (string, error) {
 }
 
 func (s Service) List(ctx context.Context) (GetCertificatesResponse, error) {
-	endpoint, err := url.JoinPath(s.apiURLUserCertificates, "certs")
+	endpoint, err := url.JoinPath(s.apiURLUserCertificates, apiVersion, "certs")
 	if err != nil {
 		return GetCertificatesResponse{}, secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
@@ -334,7 +336,7 @@ func (s Service) Create(ctx context.Context, ucr CreateCertificateRequest) (Cert
 		return Certificate{}, err
 	}
 
-	endpoint, err := url.JoinPath(s.apiURLUserCertificates, "certs")
+	endpoint, err := url.JoinPath(s.apiURLUserCertificates, apiVersion, "certs")
 	if err != nil {
 		return Certificate{}, secretsmanagererrors.Error{
 			Err:  secretsmanagererrors.ErrCannotFormatEndpoint,
