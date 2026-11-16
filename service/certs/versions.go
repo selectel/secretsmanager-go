@@ -121,7 +121,10 @@ func (s Service) certificateRequest(ctx context.Context, method, endpoint string
 	if request != nil {
 		data, err := json.Marshal(request)
 		if err != nil {
-			return secretsmanagererrors.Error{Err: secretsmanagererrors.ErrCannotMarshalCertificateBody, Desc: err.Error()}
+			return secretsmanagererrors.Error{
+				Err:  secretsmanagererrors.ErrCannotMarshalCertificateBody,
+				Desc: err.Error(),
+			}
 		}
 		body = bytes.NewReader(data)
 	}

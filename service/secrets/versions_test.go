@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -44,10 +45,11 @@ func TestCreateSecretVersion(t *testing.T) {
 					assert.Equal(t, key.path, r.URL.EscapedPath())
 					assert.Equal(t, strconv.FormatBool(activate), r.URL.Query().Get("activate"))
 					var payload map[string]string
-					assert.NoError(t, json.NewDecoder(r.Body).Decode(&payload))
+					require.NoError(t, json.NewDecoder(r.Body).Decode(&payload))
 					assert.Equal(t, map[string]string{"value": encoded}, payload)
-					assert.NoError(t, json.NewEncoder(w).Encode(map[string]any{
-						"version_id": 42, "value": encoded, "is_current": activate, "created_at": "2026-11-13T10:00:00Z",
+					require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
+						"version_id": 42, "value": encoded, "is_current": activate,
+						"created_at": "2026-11-13T10:00:00Z",
 					}))
 				})
 				result, err := service.CreateVersion(context.Background(), key.name, value, activate)
@@ -73,7 +75,8 @@ func TestSecretVersionRoutes(t *testing.T) {
 			_, _ = w.Write([]byte(`{"version_id":42,"value":"dmFsdWU=","is_current":false}`))
 		case "/v1/key/versions/18446744073709551615/activate":
 			assert.Equal(t, http.MethodPost, r.Method)
-			_, _ = w.Write([]byte(`{"version_id":18446744073709551615,"created_at":"2026-11-13T10:00:00Z","is_current":true}`))
+			_, _ = w.Write([]byte(`{"version_id":18446744073709551615,` +
+				`"created_at":"2026-11-13T10:00:00Z","is_current":true}`))
 		default:
 			t.Errorf("unexpected route: %s", r.URL)
 			w.WriteHeader(http.StatusNotFound)
@@ -105,19 +108,31 @@ func TestSecretVersionErrors(t *testing.T) {
 	calls := map[string]func(*secrets.Service, string, uint64) error{
 		"create": func(s *secrets.Service, key string, _ uint64) error {
 			_, err := s.CreateVersion(context.Background(), key, "value", false)
-			return err
+			if err != nil {
+				return fmt.Errorf("create secret version: %w", err)
+			}
+			return nil
 		},
 		"list": func(s *secrets.Service, key string, _ uint64) error {
 			_, err := s.ListVersions(context.Background(), key)
-			return err
+			if err != nil {
+				return fmt.Errorf("list secret versions: %w", err)
+			}
+			return nil
 		},
 		"get": func(s *secrets.Service, key string, version uint64) error {
 			_, err := s.GetVersion(context.Background(), key, version)
-			return err
+			if err != nil {
+				return fmt.Errorf("get secret version: %w", err)
+			}
+			return nil
 		},
 		"activate": func(s *secrets.Service, key string, version uint64) error {
 			_, err := s.ActivateVersion(context.Background(), key, version)
-			return err
+			if err != nil {
+				return fmt.Errorf("activate secret version: %w", err)
+			}
+			return nil
 		},
 	}
 	service := versionService(t, func(w http.ResponseWriter, _ *http.Request) {
@@ -129,18 +144,18 @@ func TestSecretVersionErrors(t *testing.T) {
 	})
 	for name, call := range calls {
 		t.Run(name, func(t *testing.T) {
-			assert.ErrorIs(t, call(service, "", 42), secretsmanagererrors.ErrEmptySecretName)
-			assert.ErrorIs(t, call(service, "key", 42), secretsmanagererrors.ErrNotFoundStatusText)
-			assert.ErrorIs(t, call(malformed, "key", 42), secretsmanagererrors.ErrCannotUnmarshalBody)
+			require.ErrorIs(t, call(service, "", 42), secretsmanagererrors.ErrEmptySecretName)
+			require.ErrorIs(t, call(service, "key", 42), secretsmanagererrors.ErrNotFoundStatusText)
+			require.ErrorIs(t, call(malformed, "key", 42), secretsmanagererrors.ErrCannotUnmarshalBody)
 			if name == "get" || name == "activate" {
-				assert.ErrorIs(t, call(service, "key", 0), secretsmanagererrors.ErrBadRequestStatusText)
+				require.ErrorIs(t, call(service, "key", 0), secretsmanagererrors.ErrBadRequestStatusText)
 			}
 		})
 	}
 	_, err := service.CreateVersion(context.Background(), "key", "", true)
-	assert.ErrorIs(t, err, secretsmanagererrors.ErrEmptySecretValue)
+	require.ErrorIs(t, err, secretsmanagererrors.ErrEmptySecretValue)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	_, err = service.GetVersion(ctx, "key", 42)
-	assert.ErrorIs(t, err, secretsmanagererrors.ErrInternalAppError)
+	require.ErrorIs(t, err, secretsmanagererrors.ErrInternalAppError)
 }

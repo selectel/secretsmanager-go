@@ -3,6 +3,7 @@ package certs_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -37,7 +38,7 @@ func TestCreateCertificateVersion(t *testing.T) {
 				assert.Equal(t, "/v1/cert/cert%2F%25%3F%23/versions", r.URL.EscapedPath())
 				assert.Equal(t, strconv.FormatBool(activate), r.URL.Query().Get("activate"))
 				var payload certs.UpdateCertificateVersionRequest
-				assert.NoError(t, json.NewDecoder(r.Body).Decode(&payload))
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&payload))
 				assert.Equal(t, request, payload)
 				w.WriteHeader(http.StatusCreated)
 				_, _ = w.Write([]byte(`{"id":"cert/?#","version":42}`))
@@ -107,31 +108,52 @@ func TestCertificateVersionErrors(t *testing.T) {
 	calls := map[string]func(*certs.Service, string, uint64) error{
 		"create": func(s *certs.Service, id string, _ uint64) error {
 			_, err := s.CreateVersion(context.Background(), id, request, false)
-			return err
+			if err != nil {
+				return fmt.Errorf("create certificate version: %w", err)
+			}
+			return nil
 		},
 		"list": func(s *certs.Service, id string, _ uint64) error {
 			_, err := s.ListVersions(context.Background(), id)
-			return err
+			if err != nil {
+				return fmt.Errorf("list certificate versions: %w", err)
+			}
+			return nil
 		},
 		"get": func(s *certs.Service, id string, version uint64) error {
 			_, err := s.GetVersion(context.Background(), id, version)
-			return err
+			if err != nil {
+				return fmt.Errorf("get certificate version: %w", err)
+			}
+			return nil
 		},
 		"activate": func(s *certs.Service, id string, version uint64) error {
 			_, err := s.ActivateVersion(context.Background(), id, version)
-			return err
+			if err != nil {
+				return fmt.Errorf("activate certificate version: %w", err)
+			}
+			return nil
 		},
 		"private_key": func(s *certs.Service, id string, version uint64) error {
 			_, err := s.GetVersionPrivateKey(context.Background(), id, version)
-			return err
+			if err != nil {
+				return fmt.Errorf("get certificate version private key: %w", err)
+			}
+			return nil
 		},
 		"ca_chain": func(s *certs.Service, id string, version uint64) error {
 			_, err := s.GetVersionPublicCerts(context.Background(), id, version)
-			return err
+			if err != nil {
+				return fmt.Errorf("get certificate version public certificates: %w", err)
+			}
+			return nil
 		},
 		"p12": func(s *certs.Service, id string, version uint64) error {
 			_, err := s.GetVersionPKCS12Bundle(context.Background(), id, version)
-			return err
+			if err != nil {
+				return fmt.Errorf("get certificate version PKCS12 bundle: %w", err)
+			}
+			return nil
 		},
 	}
 	service := versionService(t, func(w http.ResponseWriter, _ *http.Request) {
@@ -140,24 +162,24 @@ func TestCertificateVersionErrors(t *testing.T) {
 	})
 	for name, call := range calls {
 		t.Run(name, func(t *testing.T) {
-			assert.ErrorIs(t, call(service, "", 42), secretsmanagererrors.ErrEmptyCertificateID)
-			assert.ErrorIs(t, call(service, "cert", 42), secretsmanagererrors.ErrNotFoundStatusText)
+			require.ErrorIs(t, call(service, "", 42), secretsmanagererrors.ErrEmptyCertificateID)
+			require.ErrorIs(t, call(service, "cert", 42), secretsmanagererrors.ErrNotFoundStatusText)
 			if name != "create" && name != "list" {
-				assert.ErrorIs(t, call(service, "cert", 0), secretsmanagererrors.ErrBadRequestStatusText)
+				require.ErrorIs(t, call(service, "cert", 0), secretsmanagererrors.ErrBadRequestStatusText)
 			}
 		})
 	}
 	_, err := service.CreateVersion(context.Background(), "cert", certs.UpdateCertificateVersionRequest{}, false)
-	assert.ErrorIs(t, err, secretsmanagererrors.ErrEmptyPEMCertificate)
+	require.ErrorIs(t, err, secretsmanagererrors.ErrEmptyPEMCertificate)
 	request.Pem.PrivateKey = ""
 	_, err = service.CreateVersion(context.Background(), "cert", request, false)
-	assert.ErrorIs(t, err, secretsmanagererrors.ErrEmptyPEMPrivateKey)
+	require.ErrorIs(t, err, secretsmanagererrors.ErrEmptyPEMPrivateKey)
 	request.Pem.PrivateKey = "key"
 	malformed := versionService(t, func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("invalid JSON"))
 	})
 	for _, name := range []string{"create", "list", "get", "activate"} {
-		assert.ErrorIs(t, calls[name](malformed, "cert", 42), secretsmanagererrors.ErrCannotUnmarshalBody)
+		require.ErrorIs(t, calls[name](malformed, "cert", 42), secretsmanagererrors.ErrCannotUnmarshalBody)
 	}
 }
 
@@ -167,11 +189,13 @@ func TestConsumerMetadata(t *testing.T) {
 			assert.Equal(t, http.MethodPatch, r.Method)
 			assert.Equal(t, "/v1/cert/cert/consumers/type%2Fone/region%3F/id%2F%25%3F%23%20value", r.URL.EscapedPath())
 			var payload map[string]any
-			assert.NoError(t, json.NewDecoder(r.Body).Decode(&payload))
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&payload))
 			assert.Equal(t, map[string]any{"metadata": metadata}, payload)
 			w.WriteHeader(http.StatusNoContent)
 		})
-		err := service.UpdateConsumerMetadata(context.Background(), "cert", "type/one", "region?", "id/%?# value", metadata)
+		err := service.UpdateConsumerMetadata(
+			context.Background(), "cert", "type/one", "region?", "id/%?# value", metadata,
+		)
 		require.NoError(t, err)
 	}
 }
@@ -182,7 +206,7 @@ func TestAddConsumerMetadataAndRead(t *testing.T) {
 		if r.Method == http.MethodPut {
 			assert.Equal(t, "/v1/cert/cert/consumers", r.URL.Path)
 			var payload map[string]any
-			assert.NoError(t, json.NewDecoder(r.Body).Decode(&payload))
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&payload))
 			assert.Equal(t, map[string]any{
 				"consumers": []any{
 					map[string]any{
@@ -217,10 +241,10 @@ func TestUpdateConsumerMetadataErrors(t *testing.T) {
 		_, _ = w.Write([]byte(`{"status_text":"CONFLICT"}`))
 	})
 	ctx := context.Background()
-	assert.ErrorIs(t, service.UpdateConsumerMetadata(ctx, "", "type", "region", "id", nil),
+	require.ErrorIs(t, service.UpdateConsumerMetadata(ctx, "", "type", "region", "id", nil),
 		secretsmanagererrors.ErrEmptyCertificateID)
-	assert.ErrorIs(t, service.UpdateConsumerMetadata(ctx, "cert", "type", "region", "id", make(chan int)),
+	require.ErrorIs(t, service.UpdateConsumerMetadata(ctx, "cert", "type", "region", "id", make(chan int)),
 		secretsmanagererrors.ErrCannotMarshalCertificateBody)
-	assert.ErrorIs(t, service.UpdateConsumerMetadata(ctx, "cert", "type", "region", "id", nil),
+	require.ErrorIs(t, service.UpdateConsumerMetadata(ctx, "cert", "type", "region", "id", nil),
 		secretsmanagererrors.ErrConflictStatusText)
 }
