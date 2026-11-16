@@ -3,7 +3,6 @@ package certs_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -108,52 +107,31 @@ func TestCertificateVersionErrors(t *testing.T) {
 	calls := map[string]func(*certs.Service, string, uint64) error{
 		"create": func(s *certs.Service, id string, _ uint64) error {
 			_, err := s.CreateVersion(context.Background(), id, request, false)
-			if err != nil {
-				return fmt.Errorf("create certificate version: %w", err)
-			}
-			return nil
+			return err //nolint:wrapcheck // Forward the SDK error under test unchanged.
 		},
 		"list": func(s *certs.Service, id string, _ uint64) error {
 			_, err := s.ListVersions(context.Background(), id)
-			if err != nil {
-				return fmt.Errorf("list certificate versions: %w", err)
-			}
-			return nil
+			return err //nolint:wrapcheck // Forward the SDK error under test unchanged.
 		},
 		"get": func(s *certs.Service, id string, version uint64) error {
 			_, err := s.GetVersion(context.Background(), id, version)
-			if err != nil {
-				return fmt.Errorf("get certificate version: %w", err)
-			}
-			return nil
+			return err //nolint:wrapcheck // Forward the SDK error under test unchanged.
 		},
 		"activate": func(s *certs.Service, id string, version uint64) error {
 			_, err := s.ActivateVersion(context.Background(), id, version)
-			if err != nil {
-				return fmt.Errorf("activate certificate version: %w", err)
-			}
-			return nil
+			return err //nolint:wrapcheck // Forward the SDK error under test unchanged.
 		},
 		"private_key": func(s *certs.Service, id string, version uint64) error {
 			_, err := s.GetVersionPrivateKey(context.Background(), id, version)
-			if err != nil {
-				return fmt.Errorf("get certificate version private key: %w", err)
-			}
-			return nil
+			return err //nolint:wrapcheck // Forward the SDK error under test unchanged.
 		},
 		"ca_chain": func(s *certs.Service, id string, version uint64) error {
 			_, err := s.GetVersionPublicCerts(context.Background(), id, version)
-			if err != nil {
-				return fmt.Errorf("get certificate version public certificates: %w", err)
-			}
-			return nil
+			return err //nolint:wrapcheck // Forward the SDK error under test unchanged.
 		},
 		"p12": func(s *certs.Service, id string, version uint64) error {
 			_, err := s.GetVersionPKCS12Bundle(context.Background(), id, version)
-			if err != nil {
-				return fmt.Errorf("get certificate version PKCS12 bundle: %w", err)
-			}
-			return nil
+			return err //nolint:wrapcheck // Forward the SDK error under test unchanged.
 		},
 	}
 	service := versionService(t, func(w http.ResponseWriter, _ *http.Request) {
