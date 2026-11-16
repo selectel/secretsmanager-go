@@ -15,9 +15,10 @@ type Certificate struct {
 }
 
 type Consumer struct {
-	ID     string `json:"id"`
-	Region string `json:"region"`
-	Type   string `json:"type"`
+	ID       string `json:"id"`
+	Region   string `json:"region"`
+	Type     string `json:"type"`
+	Metadata any    `json:"metadata"`
 }
 
 type IssuedBy struct {
@@ -73,9 +74,23 @@ type AddConsumersRequest struct {
 }
 
 type AddConsumer struct {
-	ID     string `json:"id"`
-	Region string `json:"region"`
-	Type   string `json:"type"`
+	ID       string `json:"id"`
+	Region   string `json:"region"`
+	Type     string `json:"type"`
+	Metadata any    `json:"metadata,omitempty"`
+}
+
+// CertificateVersion describes a certificate version without its contents.
+type CertificateVersion struct {
+	VersionID uint64  `json:"version_id"`
+	CreatedAt string  `json:"created_at"`
+	ExpiresAt *string `json:"expires_at"`
+	IsCurrent bool    `json:"is_current"`
+}
+
+// ListVersionsResponse contains all versions of a certificate.
+type ListVersionsResponse struct {
+	Versions []CertificateVersion `json:"versions"`
 }
 
 // GetCertificatesResponse entity received by the user when making a request

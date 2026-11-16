@@ -27,8 +27,24 @@ type Secret struct {
 
 type SecretVersion struct {
 	CreatedAt string `json:"created_at"`
+	IsCurrent bool   `json:"is_current"`
 	Value     string `json:"value"` // The value of the secret in base64.
 	VersionID uint   `json:"version_id"`
+}
+
+// VersionMetadata describes a secret version without its value.
+type VersionMetadata struct {
+	VersionID uint64 `json:"version_id"`
+	CreatedAt string `json:"created_at"`
+	IsCurrent bool   `json:"is_current"`
+}
+
+// SecretVersions aggregates metadata about a secret and its versions.
+type SecretVersions struct {
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Versions    []VersionMetadata `json:"versions"`
+	CreatedAt   string            `json:"created_at,omitempty"`
 }
 
 // UserSecret — an entity created by the user to save it in the Secret Manager
